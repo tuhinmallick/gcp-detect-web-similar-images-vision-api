@@ -10,4 +10,4 @@ COPY . ./
 
 EXPOSE 80
 
-CMD python ./ui
+CMD python ./ui.py
