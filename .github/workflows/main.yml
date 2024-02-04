@@ -51,8 +51,6 @@ jobs:
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: description-generator  # Cloud Run service name.
+          service: web-reverse-image-search  # Cloud Run service name.
           image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/web-reverse-image-search:latest
           region: europe-west3  # Google Cloud region for the Cloud Run service.
-          env_vars: |
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}  # Environment variable for the service.
