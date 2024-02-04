@@ -1,0 +1,58 @@
+name: "Deploy to Google Cloud Run"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # This enables manual triggering of the workflow.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Necessary permissions for authenticating with Google Cloud.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Retrieves the code from your repository.
+
+      # Authenticate to Google Cloud with the google-github-actions/auth action.
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}  # Service account key stored in GitHub secrets.
+
+      # Set up the Google Cloud SDK without specifying credentials, as the environment is already authenticated.
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}  # Your Google Cloud project ID.
+
+      # Add a step to verify the gcloud authentication and configuration.
+      - name: Verify gcloud authentication
+        run: |
+          gcloud auth list
+          gcloud config list project
+
+      # Configure Docker to use the gcloud command-line tool as a credential helper.
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker
+
+      # Build and push the Docker image to Google Container Registry.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/product-description-builder:latest  # Image tag.
+
+      # Deploy the image to Google Cloud Run.
+            # Deploy the image to Google Cloud Run.
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: description-generator  # Cloud Run service name.
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/product-description-builder:latest
+          region: europe-west3  # Google Cloud region for the Cloud Run service.
+          env_vars: |
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}  # Environment variable for the service.
